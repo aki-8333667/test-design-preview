@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>カルティ - リクエスト予約</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --main:#FA8072;--main-dk:#F05442;--main-hover:#FA6F5F;
+  --alpha-main10:rgba(250,128,114,.08);--alpha-main30:rgba(250,128,114,.34);
+  --b90:#333333;--b60:#6F6F6F;--b30:#AAAAAA;--b20:#E1E1E1;--b10:#F6F6F6;
+  --bg:#F5F5F9;--white:#FFFFFF;
+  --danger:#FF3B30;--link:#007AFF;
+  --dis-bg:#E0E0E4;--dis-bdr:#CECED2;--dis-txt:#A6A6A8;
+}
+html,body{height:100%;background:#e0e0e8;font-family:'Noto Sans JP',sans-serif;}
+body{display:flex;justify-content:center;align-items:flex-start;}
+
+/* ── Phone wrapper ── */
+.app{
+  width:390px;min-height:100vh;background:var(--white);
+  position:relative;overflow:hidden;
+  box-shadow:0 0 32px rgba(0,0,0,.18);
+}
+
+/* ── Screen ── */
+.scr{display:none;flex-direction:column;min-height:100vh;background:var(--bg);}
+.scr.on{display:flex;}
+
+/* ── Status bar ── */
+.status-bar{
+  height:54px;background:var(--white);display:flex;align-items:flex-end;
+  justify-content:space-between;padding:0 16px 8px;flex-shrink:0;
+}
+.status-time{font-size:15px;font-weight:600;color:#000;}
+.status-icons{display:flex;align-items:center;gap:6px;font-size:12px;color:#000;}
+
+/* ── Header ── */
+.hdr{
+  height:44px;background:var(--white);display:flex;align-items:center;
+  border-top:1px solid var(--b20);border-bottom:1px solid var(--b20);
+  padding:0 4px;flex-shrink:0;position:relative;
+}
+.hdr-logo{
+  font-size:18px;font-weight:700;color:var(--b90);padding:0 10px;
+}
+.hdr-title{
+  position:absolute;left:50%;transform:translateX(-50%);
+  font-size:18px;font-weight:700;color:var(--b90);white-space:nowrap;
+}
+.hdr-icon{
+  width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;border:none;background:none;flex-shrink:0;
+}
+.hdr-icon:hover{background:var(--b10);}
+.hdr-spacer{flex:1;}
+
+/* ── Scrollable body ── */
+.body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+
+/* ── Bottom navigation ── */
+.bottom-nav{
+  height:48px;background:var(--white);border-top:1px solid var(--b20);
+  display:flex;flex-shrink:0;
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:1px;cursor:pointer;border:none;background:none;
+  font-family:'Noto Sans JP',sans-serif;
+}
+.nav-btn svg{width:22px;height:22px;fill:none;stroke:var(--b30);stroke-width:1.5;}
+.nav-btn span{font-size:11px;color:var(--b30);}
+.nav-btn.active svg{stroke:var(--main);}
+.nav-btn.active span{color:var(--main);font-weight:700;}
+
+/* ── Sticky CTA ── */
+.cta{
+  background:var(--white);border-top:1px solid var(--b20);
+  padding:12px 16px 28px;flex-shrink:0;
+}
+.cta.two{display:flex;flex-direction:column;gap:10px;}
+
+/* ── Buttons ── */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  height:40px;padding:0 12px;border-radius:6px;width:100%;
+  font-family:'Noto Sans JP',sans-serif;font-size:16px;font-weight:700;
+  cursor:pointer;border:1px solid transparent;transition:opacity .12s;
+}
+.btn-p{background:var(--main);color:#fff;border-color:var(--main-dk);box-shadow:0 1px 0 var(--main-dk);}
+.btn-p:hover{opacity:.9;}
+.btn-s{background:#fff;color:var(--main-dk);border-color:var(--b30);box-shadow:0 1px 0 var(--b30);}
+.btn-t{background:#fff;color:var(--b90);border-color:var(--b30);box-shadow:0 1px 0 var(--b30);}
+.btn:disabled,.btn.dis{background:var(--dis-bg)!important;color:var(--dis-txt)!important;border-color:var(--dis-bdr)!important;box-shadow:0 1px 0 var(--dis-bdr)!important;cursor:not-allowed;}
+.btn-danger{background:var(--danger);color:#fff;border-color:#c0241c;box-shadow:0 1px 0 #c0241c;}
+.link-btn{color:var(--link);font-size:14px;font-weight:700;background:none;border:none;cursor:pointer;font-family:'Noto Sans JP',sans-serif;}
+
+/* ── Progress ── */
+.progress{
+  display:flex;align-items:center;justify-content:center;gap:0;
+  padding:8px 16px;background:var(--white);border-bottom:1px solid var(--b20);
+}
+.prog-item{display:flex;flex-direction:column;align-items:center;gap:1px;}
+.prog-item .num{font-size:13px;}
+.prog-item .lbl{font-size:11px;}
+.prog-item.on .num,.prog-item.on .lbl{color:var(--b90);font-weight:700;}
+.prog-item:not(.on) .num,.prog-item:not(.on) .lbl{color:var(--b30);font-weight:400;}
+.prog-sep{color:var(--b30);font-size:14px;padding:0 6px;margin-bottom:10px;}
+
+/* ── Store header ── */
+.brand-img{width:100%;height:120px;object-fit:cover;display:block;}
+.brand-placeholder{
+  width:100%;height:120px;background:linear-gradient(135deg,#c8d8e8 0%,#a0b8cc 100%);
+  display:flex;align-items:center;justify-content:center;font-size:40px;
+}
+.store-card{
+  background:var(--b10);border-bottom:1px solid var(--b20);
+  display:flex;align-items:center;gap:8px;padding:12px;
+}
+.store-avatar{width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0;}
+.store-name{font-size:16px;font-weight:700;color:var(--b90);}
+
+/* ── Menu card ── */
+.menu-card{
+  background:#fff;border:1px solid var(--b20);border-radius:8px;
+  padding:12px;display:flex;align-items:center;gap:8px;cursor:pointer;
+  transition:border-color .12s;
+}
+.menu-card:hover{border-color:var(--main);}
+.menu-info{flex:1;}
+.menu-name{font-size:16px;font-weight:700;color:var(--b90);margin-bottom:6px;}
+.menu-meta{display:flex;align-items:center;gap:4px;font-size:14px;margin-bottom:6px;}
+.menu-dur{font-family:'Hiragino Kaku Gothic Pro',sans-serif;font-weight:300;color:var(--b90);}
+.menu-sep{color:var(--b90);}
+.menu-price{font-family:'Hiragino Kaku Gothic Pro',sans-serif;font-weight:600;color:var(--main);}
+.menu-tax{font-size:12px;color:var(--b90);}
+.menu-desc{font-size:12px;color:var(--b60);line-height:1.5;}
+
+/* ── Section title ── */
+.sec-ttl{
+  font-size:18px;font-weight:700;color:var(--b90);
+  padding:0 0 12px;
+}
+.section-header{
+  font-size:16px;font-weight:700;color:var(--b90);
+  padding:16px 12px 8px;
+}
+
+/* ── Notice banner ── */
+.notice{
+  margin:12px;padding:12px;border-radius:8px;
+  font-size:14px;line-height:1.6;
+}
+.notice-warn{background:#FFF5E0;border:1.5px solid #F5A623;color:#8A5C00;}
+.notice-info{background:#EBF4FF;border:1.5px solid #90CAF9;color:#1565C0;}
+
+/* ── Detail rows ── */
+.detail-section{background:#fff;border-top:1px solid var(--b20);border-bottom:1px solid var(--b20);}
+.detail-row{display:flex;gap:12px;padding:12px 16px;align-items:flex-start;}
+.detail-row+.detail-row{border-top:1px solid var(--b20);}
+.d-label{font-size:14px;font-weight:700;color:var(--b60);width:88px;flex-shrink:0;}
+.d-val{font-size:14px;color:var(--b90);flex:1;line-height:1.5;}
+
+/* ── Price rows ── */
+.price-row{display:flex;justify-content:space-between;padding:10px 16px;font-size:14px;}
+.price-row+.price-row{border-top:1px solid var(--b20);}
+.price-label{color:var(--b60);}
+.price-val{font-family:'Hiragino Kaku Gothic Pro',sans-serif;font-weight:300;color:var(--b90);}
+.price-row.total .price-label{font-weight:700;color:var(--b90);}
+.price-row.total .price-val{font-weight:600;font-size:15px;color:var(--main);}
+.price-note{font-size:11px;color:var(--b60);padding:4px 16px 10px;}
+
+/* ── Policy box ── */
+.policy-box{
+  background:var(--b10);border-radius:6px;padding:12px;
+  font-size:12px;color:var(--b60);line-height:1.7;margin:12px 16px;
+}
+
+/* ── Complete card ── */
+.complete-wrap{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:24px 16px;
+}
+.complete-card{
+  background:#fff;border-radius:16px;padding:32px 24px;
+  display:flex;flex-direction:column;align-items:center;gap:16px;
+  width:100%;box-shadow:0 2px 16px rgba(0,0,0,.08);
+}
+.complete-icon svg{width:72px;height:72px;}
+.complete-title{font-size:22px;font-weight:700;color:var(--b90);text-align:center;line-height:1.4;}
+.complete-body{font-size:14px;color:var(--b60);text-align:center;line-height:1.7;}
+.complete-sub{font-size:12px;color:var(--b60);text-align:center;}
+.complete-btns{display:flex;flex-direction:column;gap:10px;width:100%;}
+
+/* ── History cards ── */
+.hist-card{
+  background:#fff;border:1px solid var(--b20);border-radius:8px;
+  overflow:hidden;margin:0 12px 16px;
+}
+.hist-card-body{padding:12px;display:flex;flex-direction:column;gap:16px;}
+.hist-top{display:flex;flex-direction:column;gap:8px;}
+.hist-badge-row{display:flex;align-items:center;gap:8px;}
+.hist-date{font-family:'Hiragino Kaku Gothic Pro',sans-serif;font-weight:600;font-size:14px;color:var(--b90);}
+.hist-store-row{display:flex;align-items:center;gap:8px;}
+.store-thumb{
+  width:70px;height:70px;background:var(--b20);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.store-thumb svg{width:32px;height:32px;fill:none;stroke:var(--b60);stroke-width:1.5;}
+.hist-store-name{font-size:16px;font-weight:700;color:var(--b90);}
+.menu-content-box{
+  background:var(--b10);border-radius:12px;padding:8px 12px;
+  display:flex;flex-direction:column;gap:6px;
+}
+.menu-content-ttl{font-size:14px;font-weight:700;color:var(--b90);}
+.menu-content-val{font-size:14px;color:var(--b90);}
+.menu-content-divider{height:1px;background:var(--b20);}
+.hist-btns{display:flex;flex-direction:column;gap:12px;}
+.hist-link-row{border-top:1px solid var(--b20);display:flex;align-items:center;justify-content:center;padding:8px;}
+
+/* ── Status badge ── */
+.badge{display:inline-flex;align-items:center;justify-content:center;padding:2px 4px;border-radius:4px;font-size:12px;font-weight:700;white-space:nowrap;min-width:70px;}
+.b-confirmed{background:var(--main);color:#fff;}
+.b-pending{background:#FEE9BE;color:var(--b90);}
+.b-visited{background:var(--b60);color:#fff;}
+.b-rejected{background:var(--b20);color:var(--b60);}
+.b-cancelled{background:var(--b20);color:var(--b60);}
+
+/* ── Calendar (weekly) ── */
+.cal-container{background:#fff;}
+.cal-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;border-bottom:1px solid var(--b20);
+}
+.cal-month{font-size:16px;font-weight:700;color:var(--b90);}
+.cal-nav-btn{
+  width:32px;height:32px;border:1px solid var(--b30);border-radius:6px;
+  background:#fff;cursor:pointer;font-size:16px;color:var(--b60);
+  display:flex;align-items:center;justify-content:center;
+}
+.cal-selected-row{
+  padding:8px 16px;display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid var(--b20);font-size:14px;font-weight:700;color:var(--b90);
+}
+.week-table-wrap{overflow-x:auto;}
+.week-table{width:100%;border-collapse:collapse;table-layout:fixed;}
+.wt-time-col{width:44px;}
+.wt-day-col{min-width:44px;}
+.wt-head-time{height:44px;}
+.wt-head-day{
+  height:44px;text-align:center;font-size:12px;
+  border-left:1px solid var(--b20);border-bottom:1px solid var(--b20);
+  padding:4px 0;
+}
+.wt-head-day.selected-col{background:rgba(250,128,114,.08);}
+.wt-head-day .day-name{font-weight:400;color:var(--b60);}
+.wt-head-day .day-num{font-family:'Hiragino Kaku Gothic Pro',sans-serif;font-weight:600;font-size:14px;color:var(--b90);}
+.wt-head-day.today .day-num{color:var(--main);}
+.wt-head-day.sun .day-name,.wt-head-day.sun .day-num{color:var(--danger);}
+.wt-head-day.sat .day-name,.wt-head-day.sat .day-num{color:var(--link);}
+.wt-time-cell{
+  height:44px;text-align:center;font-size:11px;
+  font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+  color:var(--b60);border-bottom:1px solid var(--b20);
+  padding:2px 4px;vertical-align:middle;
+}
+.wt-slot{
+  height:44px;text-align:center;vertical-align:middle;
+  border-left:1px solid var(--b20);border-bottom:1px solid var(--b20);
+  cursor:default;font-size:14px;
+}
+.wt-slot.avail{cursor:pointer;}
+.wt-slot.avail:hover{background:var(--alpha-main10);}
+.wt-slot.req{cursor:pointer;}
+.wt-slot.req:hover{background:var(--b10);}
+.wt-slot.selected-col{background:rgba(250,128,114,.06);}
+.sym-avail{color:var(--main);font-weight:700;}
+.sym-req{color:var(--b60);}
+.sym-x{color:var(--b30);}
+.wt-slot.selected-cell{background:var(--main)!important;}
+.wt-slot.selected-cell .sym-avail,.wt-slot.selected-cell .sym-req{color:#fff;font-weight:700;}
+.cal-legend{
+  display:flex;gap:16px;padding:10px 16px;border-top:1px solid var(--b20);
+  font-size:12px;color:var(--b60);flex-wrap:wrap;
+}
+.legend-item{display:flex;align-items:center;gap:4px;}
+.legend-sym-avail{color:var(--main);font-weight:700;font-size:14px;}
+.legend-sym-req{color:var(--b60);font-size:13px;}
+.legend-sym-x{color:var(--b30);font-size:14px;}
+.legend-sym-off{color:var(--b30);font-size:14px;}
+.sym-off{color:var(--b30);font-size:14px;}
+
+/* ── Login ── */
+.login-wrap{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:32px 24px;gap:20px;overflow-y:auto;
+}
+.social-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;height:44px;border-radius:8px;
+  font-size:15px;font-weight:700;cursor:pointer;
+  border:1.5px solid var(--b20);background:#fff;
+  font-family:'Noto Sans JP',sans-serif;transition:background .12s;
+}
+.social-btn:hover{background:var(--b10);}
+.or-div{
+  display:flex;align-items:center;gap:12px;width:100%;
+  color:var(--b30);font-size:13px;
+}
+.or-div::before,.or-div::after{content:'';flex:1;height:1px;background:var(--b20);}
+.input{
+  width:100%;height:40px;padding:0 12px;
+  border:1px solid var(--b30);border-radius:6px;
+  font-size:14px;font-family:'Noto Sans JP',sans-serif;
+  color:var(--b90);outline:none;
+}
+.input:focus{border-color:var(--main);}
+.input::placeholder{color:var(--b30);}
+.form-label{font-size:14px;font-weight:700;color:var(--b90);}
+.form-group{display:flex;flex-direction:column;gap:6px;width:100%;}
+
+/* ── Detail (pending/approved/rejected) ── */
+.detail-status-bar{
+  background:#fff;padding:14px 16px;display:flex;align-items:center;
+  gap:10px;border-bottom:1px solid var(--b20);
+}
+.detail-store-bar{
+  background:#fff;padding:14px 16px;display:flex;align-items:center;
+  gap:12px;border-bottom:1px solid var(--b20);margin-top:8px;
+}
+.store-icon-box{
+  width:48px;height:48px;background:var(--b20);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.store-icon-box svg{width:24px;height:24px;fill:none;stroke:var(--b60);stroke-width:1.5;}
+
+/* ── Dialog ── */
+.dialog-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);
+  display:flex;align-items:center;justify-content:center;
+  z-index:300;opacity:0;pointer-events:none;
+  transition:opacity .2s;
+}
+.dialog-overlay.on{opacity:1;pointer-events:all;}
+.dialog-box{
+  background:#fff;border-radius:14px;padding:24px 20px 20px;
+  width:312px;transform:scale(.95);
+  transition:transform .22s cubic-bezier(.34,1.56,.64,1);
+}
+.dialog-overlay.on .dialog-box{transform:scale(1);}
+.dialog-title{font-size:17px;font-weight:700;color:var(--b90);text-align:center;margin-bottom:12px;}
+.dialog-body{font-size:14px;color:var(--b60);line-height:1.6;text-align:center;margin-bottom:20px;}
+.dialog-btns{display:flex;gap:8px;}
+.dialog-btns .btn{font-size:15px;}
+
+/* ── Customer info ── */
+.customer-info-wrap{padding:16px;display:flex;flex-direction:column;gap:16px;}
+
+/* ── MT ── */
+.mt8{margin-top:8px;}
+.mt12{margin-top:12px;}
+.mt16{margin-top:16px;}
+.px12{padding:0 12px;}
+.py8{padding:8px 0;}
+.gap-btn{display:flex;flex-direction:column;gap:12px;}
+.txt-center{text-align:center;}
+.txt-xs{font-size:12px;color:var(--b60);line-height:1.5;}
+.txt-link{color:var(--link);font-size:12px;font-weight:700;background:none;border:none;cursor:pointer;font-family:'Noto Sans JP',sans-serif;}
+.flex-row{display:flex;align-items:center;gap:8px;}
+.flex-between{display:flex;justify-content:space-between;align-items:center;}
+.w100{width:100%;}
+.divider{height:1px;background:var(--b20);}
+
+/* ── Confirm-request specific ── */
+.cr-sec-hdr{
+  background:var(--b10);border-top:1px solid var(--b20);border-bottom:1px solid var(--b20);
+  height:44px;display:flex;align-items:center;padding:0 12px;
+  font-size:16px;font-weight:700;color:var(--b90);margin-top:0;
+}
+.cr-row{display:flex;gap:8px;padding:10px 12px;align-items:flex-start;}
+.cr-lbl{font-size:14px;font-weight:700;color:var(--b60);width:86px;flex-shrink:0;line-height:1.5;}
+.cr-val{font-size:16px;color:var(--b90);flex:1;line-height:1.5;}
+.cr-divider{height:1px;background:var(--b20);margin:0 12px;}
+.cr-price-row{display:flex;align-items:center;gap:8px;padding:10px 12px 2px;}
+.cr-price-lbl{font-size:14px;font-weight:700;color:var(--b60);width:86px;flex-shrink:0;}
+.cr-price-val{font-family:'Hiragino Kaku Gothic Pro',sans-serif;font-weight:300;font-size:16px;color:var(--b90);flex:1;text-align:right;}
+.cr-tax{font-size:14px;color:var(--b90);flex-shrink:0;}
+
+/* ── Demo nav hint ── */
+.demo-hint{
+  background:#fff8;border:1px dashed var(--b30);border-radius:8px;
+  margin:12px;padding:12px;font-size:12px;
+}
+.demo-hint-title{font-weight:700;color:var(--b60);margin-bottom:6px;font-size:11px;}
+.demo-link{color:var(--link);cursor:pointer;display:block;padding:2px 0;font-weight:700;}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- ════════════════════════════════════════
+     S1: メニュー選択
+════════════════════════════════════════ -->
+<div class="scr on" id="s-menu">
+  <div class="status-bar">
+    <span class="status-time">9:41</span>
+    <span class="status-icons">▲▲▲ ≈ 🔋</span>
+  </div>
+  <div class="hdr">
+    <span class="hdr-logo">カルティ</span>
+    <div class="hdr-spacer"></div>
+    <button class="hdr-icon">
+      <svg width="20" height="14" viewBox="0 0 20 14" fill="none"><rect y="0" width="20" height="2" rx="1" fill="#333"/><rect y="6" width="20" height="2" rx="1" fill="#333"/><rect y="12" width="20" height="2" rx="1" fill="#333"/></svg>
+    </button>
+  </div>
+  <div class="body">
+    <img class="brand-img" src="https://www.figma.com/api/mcp/asset/575e05b4-42ad-4ca5-ba12-2b18f93aba01" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" alt="">
+    <div class="brand-placeholder" style="display:none">🏋️</div>
+    <div class="store-card">
+      <img class="store-avatar" src="https://www.figma.com/api/mcp/asset/d2e3ba2b-97a3-4b69-902c-53e88d22c895" onerror="this.style.background='#E1E1E1'" alt="">
+      <span class="store-name">〇〇整体院　水道橋店</span>
+    </div>
+
+    <div class="demo-hint">
+      <div class="demo-hint-title">📱 画面ショートカット（デモ用）</div>
+      <span class="demo-link" onclick="go('s-history')">📋 予約履歴</span>
+      <span class="demo-link" onclick="go('s-detail-pending')">🕐 予約詳細（申請中）</span>
+      <span class="demo-link" onclick="go('s-detail-approved')">✅ 予約詳細（承認済）</span>
+      <span class="demo-link" onclick="go('s-detail-rejected')">❌ 予約詳細（非承認）</span>
+      <span class="demo-link" onclick="showDialog('d-cancel')">🗑️ キャンセルダイアログ</span>
+    </div>
+
+    <div class="progress">
+      <div class="prog-item on"><span class="num">①</span><span class="lbl">予約対象選択</span></div>
+      <span class="prog-sep">›</span>
+      <div class="prog-item"><span class="num">②</span><span class="lbl">日時選択</span></div>
+      <span class="prog-sep">›</span>
+      <div class="prog-item"><span class="num">③</span><span class="lbl">予約内容確認</span></div>
+    </div>
+
+    <div style="padding:16px 12px">
+      <div class="sec-ttl">通常メニュー</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="menu-card" onclick="selectMenu(1,'骨盤調整コース',60,5900)">
+          <div class="menu-info">
+            <div class="menu-name">骨盤調整コース</div>
+            <div class="menu-meta">
+              <span class="menu-dur">60分</span><span class="menu-sep">/</span>
+              <span class="menu-price">5,900円</span><span class="menu-tax">(税込)</span>
+            </div>
+            <div class="menu-desc">骨盤の歪みを調整することで、全身のバランスを整えることを目指します。それによって歪みからくる腰痛や肩こりの解消が期待できます。</div>
+          </div>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="#AAAAAA" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="menu-card" onclick="selectMenu(2,'快眠整体コース',60,5900)">
+          <div class="menu-info">
+            <div class="menu-name">快眠整体コース</div>
+            <div class="menu-meta">
+              <span class="menu-dur">60分</span><span class="menu-sep">/</span>
+              <span class="menu-price">5,900円</span><span class="menu-tax">(税込)</span>
+            </div>
+            <div class="menu-desc">骨盤の歪みを調整することで、全身のバランスを整えることを目指します。それによって歪みからくる腰痛や肩こりの解消が期待できます。</div>
+          </div>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="#AAAAAA" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="menu-card" onclick="selectMenu(3,'ヘッドリラクゼーション',40,4200)">
+          <div class="menu-info">
+            <div class="menu-name">ヘッドリラクゼーション</div>
+            <div class="menu-meta">
+              <span class="menu-dur">40分</span><span class="menu-sep">/</span>
+              <span class="menu-price">4,200円</span><span class="menu-tax">(税込)</span>
+            </div>
+            <div class="menu-desc">頭皮・首周りを中心にほぐし、睡眠の質改善や頭痛緩和が期待できます。</div>
+          </div>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="#AAAAAA" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:0 12px 32px">
+      <button class="btn btn-t" onclick="">戻る</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     S2: 日時選択（週カレンダー）
+════════════════════════════════════════ -->
+<div class="scr" id="s-datetime">
+  <div class="status-bar"><span class="status-time">9:41</span><span class="status-icons">▲▲▲ ≈ 🔋</span></div>
+  <div class="hdr">
+    <button class="hdr-icon" onclick="go('s-menu')">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#333" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <span class="hdr-title">カルティ</span>
+    <div class="hdr-spacer"></div>
+    <button class="hdr-icon"><svg width="20" height="14" viewBox="0 0 20 14" fill="none"><rect y="0" width="20" height="2" rx="1" fill="#333"/><rect y="6" width="20" height="2" rx="1" fill="#333"/><rect y="12" width="20" height="2" rx="1" fill="#333"/></svg></button>
+  </div>
+  <div class="body">
+    <!-- Selected menu summary -->
+    <div style="background:#fff;border-bottom:1px solid var(--b20);padding:10px 12px;display:flex;gap:8px;align-items:center;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM16 3H8" stroke="#AAAAAA" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span style="font-size:14px;font-weight:700;color:var(--b90)" id="dt-menu-label">骨盤調整コース 60分</span>
+      <span style="font-size:14px;font-weight:700;color:var(--main)" id="dt-menu-price">/ 5,900円</span>
+      <span style="margin-left:auto"><button class="link-btn" style="font-size:12px">変更</button></span>
+    </div>
+
+    <!-- Option -->
+    <div style="background:#fff;border-bottom:1px solid var(--b20);padding:10px 12px;">
+      <div style="font-size:12px;font-weight:700;color:var(--b60);margin-bottom:4px">オプションメニュー</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <span style="font-size:14px;color:var(--b90)">ヘッドマッサージ</span>
+          <span style="font-size:12px;color:var(--b60);margin-left:6px">10分　1,200円</span>
+        </div>
+        <button class="link-btn" style="font-size:12px">変更</button>
+      </div>
+    </div>
+
+    <!-- Staff -->
+    <div style="background:#fff;border-bottom:1px solid var(--b20);padding:10px 12px;">
+      <div style="font-size:12px;font-weight:700;color:var(--b60);margin-bottom:8px">指名スタッフ</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div id="staff-any" class="staff-pill on" onclick="pickStaff('any','指名なし')">指名なし</div>
+        <div id="staff-s1" class="staff-pill" onclick="pickStaff('s1','斎藤勇気')">斎藤勇気</div>
+        <div id="staff-s2" class="staff-pill" onclick="pickStaff('s2','田中花子')">田中花子</div>
+      </div>
+      <!-- Staff info box -->
+      <div id="staff-info-box" style="margin-top:10px;background:var(--b10);border-radius:8px;padding:10px;font-size:12px;color:var(--b60);display:none">
+        <span id="staff-info-name" style="font-weight:700;color:var(--b90);display:block;margin-bottom:4px"></span>
+        <span id="staff-info-fee" style="color:var(--main);font-weight:700"></span>
+        <span id="staff-info-desc" style="display:block;margin-top:4px;line-height:1.5"></span>
+      </div>
+    </div>
+
+    <!-- Weekly calendar -->
+    <div class="cal-container">
+      <div class="cal-header">
+        <button class="cal-nav-btn" onclick="calShift(-7)">‹</button>
+        <span class="cal-month" id="cal-range-label">07/13 - 07/19</span>
+        <button class="cal-nav-btn" onclick="calShift(7)">›</button>
+      </div>
+      <div id="cal-selected-info" style="padding:8px 16px;font-size:13px;color:var(--b60);border-bottom:1px solid var(--b20);display:none">
+        <span id="cal-selected-text"></span>
+        <span id="cal-selected-badge" style="margin-left:8px;font-weight:700;color:var(--main)"></span>
+      </div>
+      <div class="week-table-wrap">
+        <table class="week-table" id="week-table"></table>
+      </div>
+      <div class="cal-legend">
+        <div class="legend-item"><span class="legend-sym-avail">◎</span><span>予約できます</span></div>
+        <div class="legend-item"><span class="legend-sym-req">□</span><span>リクエスト予約</span></div>
+        <div class="legend-item"><span class="legend-sym-x">×</span><span>予約できません</span></div>
+        <div class="legend-item"><span class="legend-sym-off">—</span><span>休業時間</span></div>
+      </div>
+    </div>
+    <div style="height:24px;"></div>
+  </div>
+  <div class="cta">
+    <button class="btn btn-p" id="dt-next-btn" disabled onclick="proceedDatetime()">次の画面へ</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     S3a: 確認画面（通常予約）
+════════════════════════════════════════ -->
+<div class="scr" id="s-confirm-normal">
+  <div class="status-bar"><span class="status-time">9:41</span><span class="status-icons">▲▲▲ ≈ 🔋</span></div>
+  <div class="hdr">
+    <button class="hdr-icon" onclick="go('s-datetime')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#333" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    <span class="hdr-title">カルティ</span>
+    <div class="hdr-spacer"></div>
+    <button class="hdr-icon"><svg width="20" height="14" viewBox="0 0 20 14" fill="none"><rect y="0" width="20" height="2" rx="1" fill="#333"/><rect y="6" width="20" height="2" rx="1" fill="#333"/><rect y="12" width="20" height="2" rx="1" fill="#333"/></svg></button>
+  </div>
+  <div class="progress">
+    <div class="prog-item"><span class="num">①</span><span class="lbl">予約対象選択</span></div>
+    <span class="prog-sep">›</span>
+    <div class="prog-item"><span class="num">②</span><span class="lbl">日時選択</span></div>
+    <span class="prog-sep">›</span>
+    <div class="prog-item on"><span class="num">③</span><span class="lbl">予約内容確認</span></div>
+  </div>
+  <div class="body">
+    <div class="notice notice-warn">
+      <strong>まだ予約は完了していません</strong><br>予約内容の確認をしてください
+    </div>
+    <div style="font-size:14px;font-weight:700;color:var(--b90);padding:12px 16px 0;border-top:1px solid var(--b20)">予約内容</div>
+    <div class="detail-section mt8">
+      <div class="detail-row"><span class="d-label">来店日時</span><span class="d-val" id="cn-dt">2024/11/14（水）17:00</span></div>
+      <div class="detail-row"><span class="d-label">メニュー</span><span class="d-val" id="cn-menu">全身マッサージ・ストレッチコース</span></div>
+      <div class="detail-row"><span class="d-label">オプション</span><span class="d-val">フットマッサージ<br>ヘッドマッサージ</span></div>
+      <div class="detail-row"><span class="d-label">スタッフ</span><span class="d-val">斎藤勇気（指名料：1,000円）</span></div>
+    </div>
+    <div style="font-size:14px;font-weight:700;color:var(--b90);padding:12px 16px 0;border-top:1px solid var(--b20);margin-top:12px">予約時の金額</div>
+    <div class="detail-section mt8">
+      <div class="price-row"><span class="price-label">メニュー</span><span class="price-val">6,100円（税込）</span></div>
+      <div class="price-row"><span class="price-label">オプション</span><span class="price-val">0円（税込）</span></div>
+      <div class="price-row"><span class="price-label">指名料</span><span class="price-val">1,000円（税込）</span></div>
+      <div class="price-row total"><span class="price-label">合計金額</span><span class="price-val" style="color:var(--b90)">7,100円（税込）</span></div>
+    </div>
+    <div style="font-size:14px;font-weight:700;color:var(--b90);padding:12px 16px 0;border-top:1px solid var(--b20);margin-top:12px">お客様情報</div>
+    <div class="detail-section mt8">
+      <div class="detail-row"><span class="d-label">お名前</span><span class="d-val">山田 太郎</span></div>
+      <div class="detail-row"><span class="d-label">電話番号</span><span class="d-val">090-1234-5678</span></div>
+    </div>
+    <div style="font-size:14px;font-weight:700;color:var(--b90);padding:12px 16px 0;border-top:1px solid var(--b20);margin-top:12px">キャンセル・変更ポリシー</div>
+    <div class="policy-box">
+      ＜キャンセル料＞<br>
+      ・2日前まで：なし<br>
+      ・前日キャンセルの場合：メニュー料金の50%<br>
+      ・当日キャンセルの場合：メニュー料金の70%<br>
+      ・連絡なし無断キャンセルの場合：メニュー料金の100%
+    </div>
+    <div style="background:#fff;border-top:1px solid var(--b20);border-bottom:1px solid var(--b20);padding:12px 16px;margin-top:12px;text-align:center;font-size:12px;color:var(--b60)">
+      「予約を確定する」を押すと<br>
+      <button class="txt-link">利用規約</button>・<button class="txt-link">プライバシーポリシー</button>に同意したことになります
+    </div>
+    <div style="height:24px"></div>
+  </div>
+  <div class="cta">
+    <button class="btn btn-p" onclick="go('s-complete-normal')">予約を確定する</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     S3b: 確認画面（リクエスト予約）
+════════════════════════════════════════ -->
+<div class="scr" id="s-confirm-request">
+  <div class="status-bar"><span class="status-time">9:41</span><span class="status-icons">▲▲▲ ≈ 🔋</span></div>
+  <div class="hdr">
+    <span class="hdr-logo">カルティ</span>
+    <div class="hdr-spacer"></div>
+    <button class="hdr-icon"><svg width="20" height="14" viewBox="0 0 20 14" fill="none"><rect y="0" width="20" height="2" rx="1" fill="#333"/><rect y="6" width="20" height="2" rx="1" fill="#333"/><rect y="12" width="20" height="2" rx="1" fill="#333"/></svg></button>
+  </div>
+
+  <div class="body">
+    <!-- Store image + name -->
+    <img class="brand-img" src="https://www.figma.com/api/mcp/asset/a75de655-4389-409e-b82e-ab564dc85d3b" onerror="this.style.display='none'" alt="">
+    <div class="store-card">
+      <img class="store-avatar" src="https://www.figma.com/api/mcp/asset/91723cfa-dabe-4d8e-91c9-767f65d58761" alt="" style="width:48px;height:48px;border-radius:8px;object-fit:cover;">
+      <span class="store-name">〇〇整体院　水道橋店</span>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress">
+      <div class="prog-item"><span class="num">①</span><span class="lbl">予約対象選択</span></div>
+      <span class="prog-sep">›</span>
+      <div class="prog-item"><span class="num">②</span><span class="lbl">日時選択</span></div>
+      <span class="prog-sep">›</span>
+      <div class="prog-item on"><span class="num">③</span><span class="lbl">予約内容確認</span></div>
+    </div>
+
+    <!-- Banner: white bg + salmon border -->
+    <div style="margin:12px;padding:10px 12px;border-radius:8px;background:#fff;border:1.5px solid var(--main);">
+      <div style="font-size:16px;font-weight:700;color:var(--b90);text-align:center;line-height:1.5">内容を確認してリクエストを<br>送信してください</div>
+      <div style="font-size:14px;color:var(--b90);text-align:center;margin-top:4px">店舗の確認後に承認・非承認が決まります</div>
+    </div>
+
+    <!-- 予約内容 -->
+    <div class="cr-sec-hdr">予約内容</div>
+    <div class="detail-section">
+      <div class="cr-row"><span class="cr-lbl">来店日時</span><span class="cr-val" style="font-family:'Hiragino Kaku Gothic Pro',sans-serif;font-weight:300" id="cr-dt">2024/11/14（水）17:00</span></div>
+      <div class="cr-divider"></div>
+      <div class="cr-row"><span class="cr-lbl">メニュー</span><span class="cr-val">全身マッサージ・ストレッチコース</span></div>
+      <div class="cr-divider"></div>
+      <div class="cr-row"><span class="cr-lbl">オプション</span><span class="cr-val">フットマッサージ<br>ヘッドマッサージ</span></div>
+      <div class="cr-divider"></div>
+      <div class="cr-row"><span class="cr-lbl">指名スタッフ</span><span class="cr-val">斎藤勇気</span></div>
+      <div class="cr-divider"></div>
+      <div class="cr-row"><span class="cr-lbl">所要時間</span><span class="cr-val" style="font-family:'Hiragino Kaku Gothic Pro',sans-serif;font-weight:300">80分</span></div>
+    </div>
+
+    <!-- 料金の目安 -->
+    <div class="cr-sec-hdr">料金の目安</div>
+    <div class="detail-section">
+      <div class="cr-price-row"><span class="cr-price-lbl">メニュー</span><span class="cr-price-val">6,100円</span><span class="cr-tax">(税込)</span></div>
+      <div class="cr-price-row"><span class="cr-price-lbl">オプション</span><span class="cr-price-val">0円</span><span class="cr-tax">(税込)</span></div>
+      <div class="cr-price-row"><span class="cr-price-lbl">指名料</span><span class="cr-price-val">1,000円</span><span class="cr-tax">(税込)</span></div>
+      <div class="cr-divider"></div>
+      <div class="cr-price-row" style="padding-top:10px">
+        <span class="cr-price-lbl" style="color:var(--b90);font-weight:700">目安合計金額</span>
+        <span class="cr-price-val" style="color:var(--main);font-weight:600;font-size:16px">7,100円</span>
+        <span class="cr-tax">(税込)</span>
+      </div>
+      <div style="font-size:12px;color:var(--b60);padding:4px 12px 10px">※手数料は承認確定後に確定します</div>
+    </div>
+
+    <!-- お客様情報 -->
+    <div class="cr-sec-hdr">お客様情報</div>
+    <div class="detail-section">
+      <div class="cr-row"><span class="cr-lbl">お名前</span><span class="cr-val">寄添太郎</span></div>
+      <div class="cr-divider"></div>
+      <div class="cr-row"><span class="cr-lbl">ヨミガナ</span><span class="cr-val">ヨリソイタロウ</span></div>
+      <div class="cr-divider"></div>
+      <div class="cr-row"><span class="cr-lbl">生年月日</span><span class="cr-val" style="font-family:'Hiragino Kaku Gothic Pro',sans-serif;font-weight:300">1988/04/18</span></div>
+      <div class="cr-divider"></div>
+      <div class="cr-row"><span class="cr-lbl">電話番号</span><span class="cr-val" style="font-family:'Hiragino Kaku Gothic Pro',sans-serif;font-weight:300">08012345555</span></div>
+      <div class="cr-divider"></div>
+      <div class="cr-row"><span class="cr-lbl">性別</span><span class="cr-val">男性</span></div>
+      <div class="cr-divider"></div>
+      <div class="cr-row"><span class="cr-lbl">メール</span><span class="cr-val" style="font-family:'Helvetica Neue',sans-serif">sample@gmail.com</span></div>
+    </div>
+
+    <!-- キャンセル・変更ポリシー -->
+    <div class="cr-sec-hdr">キャンセル・変更ポリシー</div>
+    <div class="detail-section" style="padding:12px">
+      <div style="font-size:14px;color:var(--b90);line-height:1.7">
+        【承認前（現在）】<br>
+        いつでも取消可能・料金は発生しません<br>
+        【承認後（予約確定後）】<br>
+        予約日の2日前まで無料でキャンセル可<br>
+        前日〜当日はキャンセル料が発生します<br>
+        アプリ内からキャンセル可能（電話不要）
+      </div>
+    </div>
+
+    <!-- 利用規約・プライバシーポリシー -->
+    <div class="cr-sec-hdr">利用規約・プライバシーポリシー</div>
+    <div class="detail-section" style="padding:12px;display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <button class="link-btn">利用規約</button>
+        <button class="link-btn">プライバシーポリシー</button>
+        <button class="link-btn">カルティ利用規約</button>
+        <button class="link-btn">カルティプライバシーポリシー</button>
+        <!-- Checkbox -->
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:16px;color:var(--b90)">
+          <span id="cr-agree-box" style="width:20px;height:20px;border-radius:3px;border:2px solid var(--b30);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#fff;transition:all .12s" onclick="toggleAgree()"></span>
+          上記規約に同意する
+        </label>
+      </div>
+      <!-- Buttons inside section -->
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <button class="btn btn-p" onclick="go('s-complete-request')">リクエストを送信する</button>
+        <button class="btn btn-t" onclick="go('s-datetime')">戻る</button>
+      </div>
+    </div>
+
+    <div style="height:32px"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     S4a: 予約完了（通常）
+════════════════════════════════════════ -->
+<div class="scr" id="s-complete-normal">
+  <div class="status-bar"><span class="status-time">9:41</span><span class="status-icons">▲▲▲ ≈ 🔋</span></div>
+  <div class="hdr">
+    <div style="width:44px"></div>
+    <span class="hdr-title">カルティ</span>
+    <div class="hdr-spacer"></div>
+    <button class="hdr-icon"><svg width="20" height="14" viewBox="0 0 20 14" fill="none"><rect y="0" width="20" height="2" rx="1" fill="#333"/><rect y="6" width="20" height="2" rx="1" fill="#333"/><rect y="12" width="20" height="2" rx="1" fill="#333"/></svg></button>
+  </div>
+  <div class="complete-wrap">
+    <div class="complete-card">
+      <div class="complete-icon">
+        <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+          <circle cx="36" cy="36" r="33" stroke="#FA8072" stroke-width="3"/>
+          <path d="M22 36l10 10 18-20" stroke="#FA8072" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="complete-title">予約が完了しました</div>
+      <div class="complete-body">
+        ご来店日時：2024/12/15（金）12:00<br>
+        スタッフ一同、あなたにお会いできるのを<br>楽しみにお待ちしています。<br>
+        どうぞお気をつけてお越しください。
+      </div>
+      <div class="complete-btns">
+        <button class="btn btn-s" onclick="go('s-detail-approved')">予約内容詳細へ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     S4b: リクエスト完了
+════════════════════════════════════════ -->
+<div class="scr" id="s-complete-request">
+  <div class="status-bar"><span class="status-time">9:41</span><span class="status-icons">▲▲▲ ≈ 🔋</span></div>
+  <div class="hdr">
+    <div style="width:44px"></div>
+    <span class="hdr-title">カルティ</span>
+    <div class="hdr-spacer"></div>
+    <button class="hdr-icon"><svg width="20" height="14" viewBox="0 0 20 14" fill="none"><rect y="0" width="20" height="2" rx="1" fill="#333"/><rect y="6" width="20" height="2" rx="1" fill="#333"/><rect y="12" width="20" height="2" rx="1" fill="#333"/></svg></button>
+  </div>
+  <div class="complete-wrap">
+    <div class="complete-card">
+      <div class="complete-icon">
+        <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+          <circle cx="36" cy="36" r="33" stroke="#FA8072" stroke-width="3"/>
+          <path d="M22 36l10 10 18-20" stroke="#FA8072" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="complete-title">リクエストを<br>受け付けました</div>
+      <div class="complete-body">
+        ご希望の日時をお伝えしました。<br>店舗からの返答をお待ちください。<br>
+        確認メールをご登録のアドレスに送信しました。
+      </div>
+      <div class="complete-btns">
+        <button class="btn btn-s" onclick="go('s-detail-pending')">予約内容詳細へ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     S5: 予約詳細（申請中）
+════════════════════════════════════════ -->
+<div class="scr" id="s-detail-pending">
+  <div class="status-bar"><span class="status-time">9:41</span><span class="status-icons">▲▲▲ ≈ 🔋</span></div>
+  <div class="hdr">
+    <button class="hdr-icon" onclick="go('s-history')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#333" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    <span class="hdr-title">予約内容詳細</span>
+    <div class="hdr-spacer"></div>
+    <button class="hdr-icon"><svg width="20" height="14" viewBox="0 0 20 14" fill="none"><rect y="0" width="20" height="2" rx="1" fill="#333"/><rect y="6" width="20" height="2" rx="1" fill="#333"/><rect y="12" width="20" height="2" rx="1" fill="#333"/></svg></button>
+  </div>
+  <div class="body">
+    <div style="font-size:14px;font-weight:700;color:var(--b90);padding:12px 16px;border-bottom:1px solid var(--b20);background:#fff">予約内容</div>
+    <div class="detail-section">
+      <div class="detail-row"><span class="d-label">予約状況</span><span class="d-val"><span class="badge b-pending">申請中</span></span></div>
+      <div class="detail-row"><span class="d-label">来店日時</span><span class="d-val">2024/11/14（水）17:00</span></div>
+      <div class="detail-row"><span class="d-label">店舗名</span><span class="d-val">〇〇トレーニング池袋店</span></div>
+    </div>
+    <div style="padding:10px 16px;border-bottom:1px solid var(--b20);background:#fff">
+      <button class="btn btn-t" style="height:36px;font-size:14px">店舗情報を見る</button>
+    </div>
+    <div class="detail-section mt8">
+      <div class="detail-row"><span class="d-label">メニュー</span><span class="d-val">体験トレーニング60分</span></div>
+      <div class="detail-row"><span class="d-label">オプション</span><span class="d-val">なし</span></div>
+      <div class="detail-row"><span class="d-label">指名スタッフ</span><span class="d-val">斎藤勇気</span></div>
+      <div class="detail-row"><span class="d-label">所要時間</span><span class="d-val">60分</span></div>
+    </div>
+    <div style="font-size:14px;font-weight:700;color:var(--b90);padding:12px 16px 0;border-top:1px solid var(--b20);margin-top:12px">料金の目安</div>
+    <div class="detail-section mt8">
+      <div class="price-row"><span class="price-label">メニュー</span><span class="price-val">6,100円（税込）</span></div>
+      <div class="price-row"><span class="price-label">オプション</span><span class="price-val">0円（税込）</span></div>
+      <div class="price-row"><span class="price-label">指名料</span><span class="price-val">1,000円（税込）</span></div>
+      <div class="price-row total"><span class="price-label">目安合計金額</span><span class="price-val" style="color:var(--main)">7,100円（税込）</span></div>
+      <div class="price-note">※手数料は承認確定後に確定します</div>
+    </div>
+    <div style="font-size:14px;font-weight:700;color:var(--b90);padding:12px 16px 0;border-top:1px solid var(--b20);margin-top:12px">キャンセル・変更ポリシー</div>
+    <div class="policy-box">
+      【承認前（現在）】<br>いつでも取消可能・料金は発生しません<br><br>
+      【承認後（予約確定後）】<br>予約日の2日前まで無料でキャンセル可<br>前日〜当日はキャンセル料が発生します<br>アプリ内からキャンセル可能（電話不要）
+    </div>
+    <div style="height:24px"></div>
+  </div>
+  <div class="cta">
+    <button class="btn btn-t" onclick="showDialog('d-cancel')">リクエストをキャンセルする</button>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-btn" onclick="go('s-menu')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>ホーム</span></button>
+    <button class="nav-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg><span>記録</span></button>
+    <button class="nav-btn active" onclick="go('s-history')"><svg viewBox="0 0 24 24" stroke="#FA8072"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span>予約</span></button>
+    <button class="nav-btn"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>アカウント</span></button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     S6: 予約詳細（承認済）
+════════════════════════════════════════ -->
+<div class="scr" id="s-detail-approved">
+  <div class="status-bar"><span class="status-time">9:41</span><span class="status-icons">▲▲▲ ≈ 🔋</span></div>
+  <div class="hdr">
+    <button class="hdr-icon" onclick="go('s-history')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#333" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    <span class="hdr-title">予約内容詳細</span>
+    <div class="hdr-spacer"></div>
+    <button class="hdr-icon"><svg width="20" height="14" viewBox="0 0 20 14" fill="none"><rect y="0" width="20" height="2" rx="1" fill="#333"/><rect y="6" width="20" height="2" rx="1" fill="#333"/><rect y="12" width="20" height="2" rx="1" fill="#333"/></svg></button>
+  </div>
+  <div class="body">
+    <div style="font-size:14px;font-weight:700;color:var(--b90);padding:12px 16px;border-bottom:1px solid var(--b20);background:#fff">予約内容</div>
+    <div class="detail-section">
+      <div class="detail-row"><span class="d-label">予約状況</span><span class="d-val"><span class="badge b-confirmed">予約確定</span></span></div>
+      <div class="detail-row"><span class="d-label">来店日時</span><span class="d-val" style="font-weight:700;color:var(--main)">2024/11/14（水）17:00</span></div>
+      <div class="detail-row"><span class="d-label">店舗名</span><span class="d-val">〇〇トレーニング池袋店</span></div>
+    </div>
+    <div style="padding:10px 16px;border-bottom:1px solid var(--b20);background:#fff">
+      <button class="btn btn-t" style="height:36px;font-size:14px">店舗情報を見る</button>
+    </div>
+    <div class="detail-section mt8">
+      <div class="detail-row"><span class="d-label">メニュー</span><span class="d-val">体験トレーニング60分</span></div>
+      <div class="detail-row"><span class="d-label">オプション</span><span class="d-val">なし</span></div>
+      <div class="detail-row"><span class="d-label">指名スタッフ</span><span class="d-val">斎藤勇気</span></div>
+      <div class="detail-row"><span class="d-label">所要時間</span><span class="d-val">60分</span></div>
+    </div>
+    <div style="font-size:14px;font-weight:700;color:var(--b90);padding:12px 16px 0;border-top:1px solid var(--b20);margin-top:12px">料金</div>
+    <div class="detail-section mt8">
+      <div class="price-row"><span class="price-label">メニュー</span><span class="price-val">6,100円（税込）</span></div>
+      <div class="price-row"><span class="price-label">オプション</span><span class="price-val">0円（税込）</span></div>
+      <div class="price-row"><span class="price-label">指名料</span><span class="price-val">1,000円（税込）</span></div>
+      <div class="price-row"><span class="price-label">手数料</span><span class="price-val">220円</span></div>
+      <div class="price-row total"><span class="price-label">合計金額</span><span class="price-val" style="color:var(--b90)">7,320円（税込）</span></div>
+    </div>
+    <div style="font-size:14px;font-weight:700;color:var(--b90);padding:12px 16px 0;border-top:1px solid var(--b20);margin-top:12px">キャンセル・変更ポリシー</div>
+    <div class="policy-box">
+      ＜キャンセル料＞<br>
+      ・2日前まで：なし<br>
+      ・前日キャンセルの場合：メニュー料金の50%<br>
+      ・当日キャンセルの場合：メニュー料金の70%<br>
+      ・連絡なし無断キャンセルの場合：メニュー料金の100%
+    </div>
+    <div style="height:24px"></div>
+  </div>
+  <div class="cta">
+    <button class="btn btn-t" onclick="showDialog('d-cancel-approved')">キャンセル・変更する</button>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-btn" onclick="go('s-menu')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>ホーム</span></button>
+    <button class="nav-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg><span>記録</span></button>
+    <button class="nav-btn active" onclick="go('s-history')"><svg viewBox="0 0 24 24" stroke="#FA8072"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span>予約</span></button>
+    <button class="nav-btn"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>アカウント</span></button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     S7: 予約詳細（非承認）
+════════════════════════════════════════ -->
+<div class="scr" id="s-detail-rejected">
+  <div class="status-bar"><span class="status-time">9:41</span><span class="status-icons">▲▲▲ ≈ 🔋</span></div>
+  <div class="hdr">
+    <button class="hdr-icon" onclick="go('s-history')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#333" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    <span class="hdr-title">予約内容詳細</span>
+    <div class="hdr-spacer"></div>
+    <button class="hdr-icon"><svg width="20" height="14" viewBox="0 0 20 14" fill="none"><rect y="0" width="20" height="2" rx="1" fill="#333"/><rect y="6" width="20" height="2" rx="1" fill="#333"/><rect y="12" width="20" height="2" rx="1" fill="#333"/></svg></button>
+  </div>
+  <div class="body">
+    <div style="font-size:14px;font-weight:700;color:var(--b90);padding:12px 16px;border-bottom:1px solid var(--b20);background:#fff">予約内容</div>
+    <div class="detail-section" style="opacity:.55">
+      <div class="detail-row"><span class="d-label">予約状況</span><span class="d-val"><span class="badge b-rejected">非承認</span></span></div>
+      <div class="detail-row"><span class="d-label">来店日時</span><span class="d-val">2024/11/14（水）17:00</span></div>
+      <div class="detail-row"><span class="d-label">店舗名</span><span class="d-val">〇〇トレーニング池袋店</span></div>
+      <div class="detail-row"><span class="d-label">メニュー</span><span class="d-val">体験トレーニング60分</span></div>
+      <div class="detail-row"><span class="d-label">オプション</span><span class="d-val">なし</span></div>
+      <div class="detail-row"><span class="d-label">指名スタッフ</span><span class="d-val">指名なし</span></div>
+    </div>
+    <div style="margin:12px 16px;padding:12px;background:var(--b10);border-radius:8px;font-size:13px;color:var(--b60);line-height:1.6">
+      <div style="font-weight:700;color:var(--b90);margin-bottom:6px;font-size:14px">店舗からのメッセージ</div>
+      ご希望の日時はすでに予約が入っております。大変申し訳ございませんが、別の日時でお申し込みいただければ幸いです。
+    </div>
+    <div style="height:24px"></div>
+  </div>
+  <div class="cta two">
+    <button class="btn btn-p" onclick="go('s-datetime')">再度リクエストをする</button>
+    <button class="btn btn-t" onclick="go('s-menu')">この店舗で予約する</button>
+    <button class="btn btn-t dis" disabled>キャンセル済み</button>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-btn" onclick="go('s-menu')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>ホーム</span></button>
+    <button class="nav-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg><span>記録</span></button>
+    <button class="nav-btn active" onclick="go('s-history')"><svg viewBox="0 0 24 24" stroke="#FA8072"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span>予約</span></button>
+    <button class="nav-btn"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>アカウント</span></button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     S8: 予約履歴
+════════════════════════════════════════ -->
+<div class="scr" id="s-history">
+  <div class="status-bar"><span class="status-time">9:41</span><span class="status-icons">▲▲▲ ≈ 🔋</span></div>
+  <div class="hdr">
+    <button class="hdr-icon" onclick="go('s-menu')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#333" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    <span class="hdr-title">予約履歴</span>
+    <div class="hdr-spacer"></div>
+    <button class="hdr-icon"><svg width="20" height="14" viewBox="0 0 20 14" fill="none"><rect y="0" width="20" height="2" rx="1" fill="#333"/><rect y="6" width="20" height="2" rx="1" fill="#333"/><rect y="12" width="20" height="2" rx="1" fill="#333"/></svg></button>
+  </div>
+  <div class="body">
+    <!-- Filter -->
+    <div style="padding:12px;border-bottom:1px solid var(--b20);display:flex;justify-content:flex-end;background:#fff">
+      <div style="display:flex;align-items:center;gap:4px;border:1px solid var(--b30);border-radius:6px;padding:8px 12px;font-size:14px;cursor:pointer;background:#fff">
+        <span>全て</span>
+        <svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1l5 5 5-5" stroke="#333" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+    </div>
+
+    <div style="padding:16px 12px 8px;font-size:16px;font-weight:700;color:var(--b90)">確定している予約</div>
+    <div class="hist-card">
+      <div class="hist-card-body">
+        <div class="hist-top">
+          <div class="hist-badge-row">
+            <span class="badge b-confirmed">予約確定</span>
+            <span class="hist-date">2024/11/14（火）17:00</span>
+          </div>
+          <div class="hist-store-row">
+            <div class="store-thumb">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#6F6F6F" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <span class="hist-store-name">〇〇トレーニング池袋店</span>
+          </div>
+        </div>
+        <div class="menu-content-box">
+          <span class="menu-content-ttl">メニュー内容</span>
+          <span class="menu-content-val">体験トレーニング(60分)</span>
+        </div>
+        <div class="hist-btns gap-btn">
+          <button class="btn btn-p" onclick="go('s-detail-approved')">予約内容詳細</button>
+          <button class="btn btn-t">店舗の詳細</button>
+        </div>
+      </div>
+      <div class="hist-link-row">
+        <button class="link-btn">事前ヒアリングに答える</button>
+      </div>
+    </div>
+
+    <div style="padding:16px 12px 8px;font-size:16px;font-weight:700;color:var(--b90)">対応待ちのリクエスト</div>
+    <div class="hist-card">
+      <div class="hist-card-body">
+        <div class="hist-top">
+          <div class="hist-badge-row">
+            <span class="badge b-pending">申請中</span>
+            <span class="hist-date">2024/11/14（火）17:00</span>
+          </div>
+          <div class="hist-store-row">
+            <div class="store-thumb">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#6F6F6F" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <span class="hist-store-name">〇〇トレーニング池袋店</span>
+          </div>
+        </div>
+        <div class="menu-content-box">
+          <span class="menu-content-ttl">メニュー内容</span>
+          <span class="menu-content-val">体験トレーニング(60分)</span>
+        </div>
+        <div class="hist-btns gap-btn">
+          <button class="btn btn-p" onclick="go('s-detail-pending')">予約内容詳細</button>
+          <button class="btn btn-t" onclick="showDialog('d-cancel')">リクエストをキャンセル</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:16px 12px 8px;font-size:16px;font-weight:700;color:var(--b90)">過去の予約</div>
+    <div class="hist-card">
+      <div class="hist-card-body">
+        <div class="hist-top">
+          <div class="hist-badge-row">
+            <span class="badge b-visited">来店済み</span>
+            <span class="hist-date">2024/11/07（火）17:00</span>
+          </div>
+          <div class="hist-store-row">
+            <div class="store-thumb">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#6F6F6F" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <span class="hist-store-name">〇〇整体</span>
+          </div>
+        </div>
+        <div class="menu-content-box">
+          <span class="menu-content-ttl">メニュー内容</span>
+          <span class="menu-content-val">体験トレーニング(60分)文字が多い時は改行文字が多い時は改行</span>
+          <div class="menu-content-divider"></div>
+          <button class="link-btn" onclick="go('s-detail-approved')" style="display:flex;align-items:center;gap:2px">
+            予約内容詳細<svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="#007AFF" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="hist-btns gap-btn">
+          <button class="btn btn-p">同じメニューで再予約する</button>
+          <button class="btn btn-t">この店舗で予約する</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="hist-card" style="margin-bottom:20px">
+      <div class="hist-card-body">
+        <div class="hist-top">
+          <div class="hist-badge-row">
+            <span class="badge b-rejected">非承認</span>
+            <span class="hist-date">2024/11/07（火）17:00</span>
+          </div>
+          <div class="hist-store-row">
+            <div class="store-thumb">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#6F6F6F" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <span class="hist-store-name">〇〇整体</span>
+          </div>
+        </div>
+        <div class="menu-content-box">
+          <span class="menu-content-ttl">メニュー内容</span>
+          <span class="menu-content-val">体験トレーニング(60分)文字が多い時は改行文字が多い時は改行</span>
+          <div class="menu-content-divider"></div>
+          <button class="link-btn" onclick="go('s-detail-rejected')" style="display:flex;align-items:center;gap:2px">
+            予約内容詳細<svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="#007AFF" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="hist-btns gap-btn">
+          <button class="btn btn-p" onclick="go('s-datetime')">再度リクエストをする</button>
+          <button class="btn btn-t" onclick="go('s-menu')">この店舗で予約する</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-btn" onclick="go('s-menu')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>ホーム</span></button>
+    <button class="nav-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg><span>記録</span></button>
+    <button class="nav-btn active"><svg viewBox="0 0 24 24" stroke="#FA8072"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span>予約</span></button>
+    <button class="nav-btn"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>アカウント</span></button>
+  </div>
+</div>
+
+<!-- ════════════════
+     Dialogs
+════════════════ -->
+<div class="dialog-overlay" id="d-cancel">
+  <div class="dialog-box">
+    <div class="dialog-title">リクエストをキャンセル</div>
+    <div class="dialog-body">
+      リクエストをキャンセルしてもよろしいでしょうか?<br>
+      <span style="font-size:12px">一度キャンセルされたリクエストはもとに戻すことはできません。</span>
+    </div>
+    <div class="dialog-btns">
+      <button class="btn btn-danger" onclick="doCancel()">キャンセル</button>
+      <button class="btn btn-t" onclick="hideDialog('d-cancel')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div class="dialog-overlay" id="d-cancel-approved">
+  <div class="dialog-box">
+    <div class="dialog-title">予約をキャンセルしますか？</div>
+    <div class="dialog-body">
+      2024/11/14（水）17:00<br>体験トレーニング60分<br>
+      <span style="font-size:12px;color:var(--danger)">前日キャンセルのためキャンセル料が発生する場合があります。</span>
+    </div>
+    <div class="dialog-btns">
+      <button class="btn btn-danger" onclick="hideDialog('d-cancel-approved');go('s-history')">キャンセルする</button>
+      <button class="btn btn-t" onclick="hideDialog('d-cancel-approved')">戻る</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.staff-pill{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:6px 16px;border-radius:100px;border:1.5px solid var(--b30);
+  background:#fff;font-size:14px;color:var(--b90);cursor:pointer;
+  font-family:'Noto Sans JP',sans-serif;transition:all .12s;
+}
+.staff-pill.on{border-color:var(--main);background:var(--alpha-main10);}
+</style>
+
+<script>
+// ── State ──
+const S = {
+  menuName:'骨盤調整コース',menuMin:60,menuPrice:5900,
+  staff:'any',
+  isRequest:false,
+  selDay:null,selTime:null,
+  weekStart: (()=>{ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-d.getDay()+1); return d; })(), // 今週月曜
+};
+
+// ── Navigation ──
+function go(id){
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
+  const t=document.getElementById(id);
+  if(t){t.classList.add('on');t.querySelector('.body')?.scrollTo(0,0);}
+}
+
+// ── Menu ──
+function selectMenu(id,name,min,price){
+  S.menuName=name;S.menuMin=min;S.menuPrice=price;
+  document.getElementById('dt-menu-label').textContent=`${name} ${min}分`;
+  document.getElementById('dt-menu-price').textContent=`/ ${price.toLocaleString()}円`;
+  renderWeekTable();
+  go('s-datetime');
+}
+
+// ── Staff ──
+const STAFF={
+  any:{name:'指名なし',fee:'指名料：¥0',desc:''},
+  s1:{name:'斎藤勇気',fee:'指名料：¥1,000',desc:'技術はもちろん、お客様とのコミュニケーションを大事にしています。お体のお悩みご相談ください。'},
+  s2:{name:'田中花子',fee:'指名料：¥500',desc:'丁寧なカウンセリングで一人ひとりに合ったケアを提供します。'},
+};
+function pickStaff(id){
+  S.staff=id;
+  document.querySelectorAll('.staff-pill').forEach(p=>p.classList.remove('on'));
+  const map={any:'staff-any',s1:'staff-s1',s2:'staff-s2'};
+  document.getElementById(map[id]).classList.add('on');
+  const info=document.getElementById('staff-info-box');
+  if(id==='any'){info.style.display='none';}
+  else{
+    info.style.display='';
+    document.getElementById('staff-info-name').textContent=STAFF[id].name;
+    document.getElementById('staff-info-fee').textContent=STAFF[id].fee;
+    document.getElementById('staff-info-desc').textContent=STAFF[id].desc;
+  }
+}
+
+// ── Calendar week ──
+const TIMES=['9:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00'];
+const DAY_JP=['日','月','火','水','木','金','土'];
+
+// Returns: 'avail' | 'req' | 'x' | 'off' (休業時間)
+function slotType(dayOfWeek,timeIdx){
+  // Sunday = holiday (全休)
+  if(dayOfWeek===0) return 'x';
+  // Saturday = partial hours (afternoon off)
+  if(dayOfWeek===6 && timeIdx>=10) return 'off';
+  // Off-hours: last 2 slots (18:30, 19:00) on weekdays
+  if(timeIdx>=18) return 'off';
+  // Some unavailable slots
+  if(dayOfWeek===3 && timeIdx>=8 && timeIdx<=11) return 'x'; // Wednesday lunchtime
+  if(dayOfWeek===1 && timeIdx===4) return 'x';
+  if(dayOfWeek===5 && timeIdx>=14) return 'x';
+  // Request slots: some evenings and specific times
+  if(timeIdx<=1) return 'req'; // Early morning = request only
+  if(dayOfWeek===2 && timeIdx>=12) return 'req';
+  if(dayOfWeek===4 && timeIdx>=14) return 'req';
+  return 'avail';
+}
+
+function renderWeekTable(){
+  const ws=S.weekStart;
+  const days=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(ws);d.setDate(ws.getDate()+i);
+    days.push(d);
+  }
+  const label=`${days[0].getMonth()+1}/${String(days[0].getDate()).padStart(2,'0')} - ${days[6].getMonth()+1}/${String(days[6].getDate()).padStart(2,'0')}`;
+  document.getElementById('cal-range-label').textContent=label;
+
+  const today=new Date();
+  today.setHours(0,0,0,0);
+
+  let html='<colgroup><col class="wt-time-col">';
+  for(let i=0;i<7;i++) html+='<col class="wt-day-col">';
+  html+='</colgroup><thead><tr><th class="wt-head-time"></th>';
+
+  days.forEach((d,i)=>{
+    const dow=d.getDay();
+    const isPast=d<today;
+    let cls='wt-head-day';
+    if(dow===0) cls+=' sun';
+    if(dow===6) cls+=' sat';
+    const isSel=S.selDay&&d.toDateString()===S.selDay.toDateString();
+    if(isSel) cls+=' selected-col';
+    html+=`<th class="${cls}"><div class="day-name">${DAY_JP[dow]}</div><div class="day-num">${d.getDate()}</div></th>`;
+  });
+  html+='</tr></thead><tbody>';
+
+  TIMES.forEach((t,ti)=>{
+    html+=`<tr><td class="wt-time-cell">${t}</td>`;
+    days.forEach((d,di)=>{
+      const dow=d.getDay();
+      const isPast=d<today;
+      const st=isPast?'x':slotType(dow,ti);
+      const isSel=S.selDay&&d.toDateString()===S.selDay.toDateString()&&S.selTime===t;
+      const isSelCol=S.selDay&&d.toDateString()===S.selDay.toDateString();
+      let cls='wt-slot';
+      if(isSelCol) cls+=' selected-col';
+      if(isSel) cls+=' selected-cell';
+      else if(st==='avail') cls+=' avail';
+      else if(st==='req') cls+=' req';
+      let sym='';
+      if(st==='avail') sym=`<span class="sym-avail">◎</span>`;
+      else if(st==='req') sym=`<span class="sym-req">□</span>`;
+      else if(st==='off') sym=`<span class="sym-off">—</span>`;
+      else sym=`<span class="sym-x">×</span>`;
+      const onclick=(st==='avail'||st==='req')&&!isPast?`onclick="selectSlot(${di},${ti},'${t}',${dow},'${st}')"`:'' ;
+      html+=`<td class="${cls}" ${onclick}>${sym}</td>`;
+    });
+    html+='</tr>';
+  });
+  html+='</tbody>';
+  document.getElementById('week-table').innerHTML=html;
+}
+
+function selectSlot(di,ti,time,dow,type){
+  const ws=S.weekStart;
+  const d=new Date(ws);d.setDate(ws.getDate()+di);
+  S.selDay=d;S.selTime=time;S.isRequest=(type==='req');
+  renderWeekTable();
+  const info=document.getElementById('cal-selected-info');
+  const text=document.getElementById('cal-selected-text');
+  const badge=document.getElementById('cal-selected-badge');
+  info.style.display='';
+  text.textContent=`${d.getMonth()+1}/${d.getDate()}（${DAY_JP[dow]}）${time}`;
+  badge.textContent=S.isRequest?'□ リクエスト予約':'◎ 予約確定';
+  badge.style.color=S.isRequest?'var(--b60)':'var(--main)';
+  const btn=document.getElementById('dt-next-btn');
+  btn.disabled=false;
+  btn.textContent=S.isRequest?'□ リクエストとして進む':'次の画面へ';
+}
+
+function calShift(days){
+  S.weekStart.setDate(S.weekStart.getDate()+days);
+  S.selDay=null;S.selTime=null;
+  document.getElementById('cal-selected-info').style.display='none';
+  document.getElementById('dt-next-btn').disabled=true;
+  document.getElementById('dt-next-btn').textContent='次の画面へ';
+  renderWeekTable();
+}
+
+function proceedDatetime(){
+  if(S.isRequest) go('s-confirm-request');
+  else go('s-confirm-normal');
+}
+
+// ── Agree checkbox ──
+let _agreed = false;
+function toggleAgree(){
+  _agreed = !_agreed;
+  const box = document.getElementById('cr-agree-box');
+  if(box){
+    box.style.background = _agreed ? 'var(--main)' : '#fff';
+    box.style.borderColor = _agreed ? 'var(--main)' : 'var(--b30)';
+    box.innerHTML = _agreed ? '<svg width="12" height="9" viewBox="0 0 12 9" fill="none"><path d="M1 4l3.5 3.5L11 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
+  }
+}
+
+// ── Dialog ──
+function showDialog(id){document.getElementById(id).classList.add('on');}
+function hideDialog(id){document.getElementById(id).classList.remove('on');}
+function doCancel(){hideDialog('d-cancel');go('s-history');}
+document.querySelectorAll('.dialog-overlay').forEach(el=>{
+  el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('on');});
+});
+
+// ── Init ──
+renderWeekTable();
+</script>
+</body>
+</html>

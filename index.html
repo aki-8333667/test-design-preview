@@ -18,6 +18,29 @@
 html,body{height:100%;background:#e0e0e8;font-family:'Noto Sans JP',sans-serif;}
 body{display:flex;justify-content:center;align-items:flex-start;}
 
+/* ── Demo panel (outside phone) ── */
+.demo-panel{
+  position:fixed;left:calc(50% + 210px);top:24px;
+  width:180px;background:#fff;border-radius:12px;
+  box-shadow:0 4px 20px rgba(0,0,0,.14);
+  padding:12px;z-index:9999;
+  font-family:'Noto Sans JP',sans-serif;
+}
+.demo-panel-title{
+  font-size:10px;font-weight:700;color:var(--b60);
+  margin-bottom:8px;letter-spacing:.04em;
+  display:flex;align-items:center;gap:4px;
+}
+.demo-panel-link{
+  display:block;font-size:12px;font-weight:700;
+  color:var(--link);padding:4px 0;cursor:pointer;
+  border:none;background:none;text-align:left;width:100%;
+  font-family:'Noto Sans JP',sans-serif;
+  border-radius:4px;
+}
+.demo-panel-link:hover{background:rgba(0,122,255,.06);padding-left:4px;}
+.demo-panel-divider{height:1px;background:var(--b20);margin:6px 0;}
+
 /* ── Phone wrapper ── */
 .app{
   width:390px;min-height:100vh;background:var(--white);
@@ -388,16 +411,29 @@ body{display:flex;justify-content:center;align-items:flex-start;}
 .cr-price-val{font-family:'Hiragino Kaku Gothic Pro',sans-serif;font-weight:300;font-size:16px;color:var(--b90);flex:1;text-align:right;}
 .cr-tax{font-size:14px;color:var(--b90);flex-shrink:0;}
 
-/* ── Demo nav hint ── */
-.demo-hint{
-  background:#fff8;border:1px dashed var(--b30);border-radius:8px;
-  margin:12px;padding:12px;font-size:12px;
-}
-.demo-hint-title{font-weight:700;color:var(--b60);margin-bottom:6px;font-size:11px;}
-.demo-link{color:var(--link);cursor:pointer;display:block;padding:2px 0;font-weight:700;}
 </style>
 </head>
 <body>
+
+<!-- ── Demo navigation panel (outside phone frame) ── -->
+<div class="demo-panel">
+  <div class="demo-panel-title">🗂 画面ショートカット</div>
+  <button class="demo-panel-link" onclick="go('s-menu')">① メニュー選択</button>
+  <button class="demo-panel-link" onclick="go('s-datetime')">② 日時選択</button>
+  <button class="demo-panel-link" onclick="go('s-confirm-normal')">③ 確認（通常予約）</button>
+  <button class="demo-panel-link" onclick="go('s-confirm-request')">③ 確認（リクエスト）</button>
+  <div class="demo-panel-divider"></div>
+  <button class="demo-panel-link" onclick="go('s-complete-normal')">✅ 予約完了</button>
+  <button class="demo-panel-link" onclick="go('s-complete-request')">📩 リクエスト完了</button>
+  <div class="demo-panel-divider"></div>
+  <button class="demo-panel-link" onclick="go('s-history')">📋 予約履歴</button>
+  <button class="demo-panel-link" onclick="go('s-detail-pending')">🕐 詳細（申請中）</button>
+  <button class="demo-panel-link" onclick="go('s-detail-approved')">✅ 詳細（承認済）</button>
+  <button class="demo-panel-link" onclick="go('s-detail-rejected')">❌ 詳細（非承認）</button>
+  <div class="demo-panel-divider"></div>
+  <button class="demo-panel-link" onclick="showDialog('d-cancel')">🗑 キャンセルDialog</button>
+</div>
+
 <div class="app" id="app">
 
 <!-- ════════════════════════════════════════
@@ -421,15 +457,6 @@ body{display:flex;justify-content:center;align-items:flex-start;}
     <div class="store-card">
       <img class="store-avatar" src="https://www.figma.com/api/mcp/asset/d2e3ba2b-97a3-4b69-902c-53e88d22c895" onerror="this.style.background='#E1E1E1'" alt="">
       <span class="store-name">〇〇整体院　水道橋店</span>
-    </div>
-
-    <div class="demo-hint">
-      <div class="demo-hint-title">📱 画面ショートカット（デモ用）</div>
-      <span class="demo-link" onclick="go('s-history')">📋 予約履歴</span>
-      <span class="demo-link" onclick="go('s-detail-pending')">🕐 予約詳細（申請中）</span>
-      <span class="demo-link" onclick="go('s-detail-approved')">✅ 予約詳細（承認済）</span>
-      <span class="demo-link" onclick="go('s-detail-rejected')">❌ 予約詳細（非承認）</span>
-      <span class="demo-link" onclick="showDialog('d-cancel')">🗑️ キャンセルダイアログ</span>
     </div>
 
     <div class="progress">
